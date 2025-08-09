@@ -3,6 +3,10 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Stars, PerspectiveCamera } from '@react-three/drei';
 import { Suspense } from 'react';
+import { PlayerShip } from './PlayerShip';
+import { AsteroidField } from './AsteroidField';
+import { SpaceStation } from './SpaceStation';
+import { useGame } from '../../hooks/useGame';
 
 // Loading component for 3D scene
 function LoadingScreen() {
@@ -13,8 +17,24 @@ function LoadingScreen() {
   );
 }
 
-// Basic space environment
+// Error boundary for 3D scene
+function SceneErrorBoundary({ children }: { children: React.ReactNode }) {
+  try {
+    return <>{children}</>;
+  } catch (error) {
+    console.error('3D Scene Error:', error);
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-red-400 text-lg">3D Scene Error - Please refresh</div>
+      </div>
+    );
+  }
+}
+
+// Enhanced space environment with game objects
 function SpaceEnvironment() {
+  const { player, isInMission } = useGame();
+
   return (
     <>
       {/* Starfield background */}
@@ -29,27 +49,43 @@ function SpaceEnvironment() {
       />
 
       {/* Ambient lighting */}
-      <ambientLight intensity={0.3} />
+      <ambientLight intensity={0.2} />
 
       {/* Directional light (sun) */}
       <directionalLight
-        position={[10, 10, 5]}
-        intensity={1}
+        position={[20, 20, 10]}
+        intensity={0.8}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
       />
 
-      {/* Basic test objects */}
-      <mesh position={[0, 0, 0]}>
-        <sphereGeometry args={[1, 32, 32]} />
-        <meshStandardMaterial color="#4a9eff" emissive="#001133" />
-      </mesh>
+      {/* Space Station */}
+      <SpaceStation position={[0, 0, -25]} />
 
-      <mesh position={[3, 0, -2]}>
-        <boxGeometry args={[0.5, 0.5, 0.5]} />
-        <meshStandardMaterial color="#ff6b4a" />
-      </mesh>
+      {/* Player Ship */}
+      {player && (
+        <PlayerShip position={[0, 0, 5]} />
+      )}
+
+      {/* Asteroid Field - only show when connected */}
+      {player && (
+        <AsteroidField count={25} radius={20} />
+      )}
+
+      {/* Additional space ambiance */}
+      <pointLight
+        position={[-30, 10, -10]}
+        color="#4338ca"
+        intensity={0.3}
+        distance={50}
+      />
+      <pointLight
+        position={[30, -10, 10]}
+        color="#dc2626"
+        intensity={0.2}
+        distance={40}
+      />
     </>
   );
 }
@@ -60,24 +96,29 @@ interface Scene3DProps {
 
 export function Scene3D({ className = "" }: Scene3DProps) {
   return (
-    <div className={`w-full h-full bg-black ${className}`}>
+        <div className={`w-full h-full bg-black ${className}`}>
       <Canvas>
-        <Suspense fallback={<LoadingScreen />}>
-          {/* Camera setup */}
-          <PerspectiveCamera makeDefault position={[5, 5, 5]} />
+        <SceneErrorBoundary>
+          <Suspense fallback={<LoadingScreen />}>
+            {/* Camera setup */}
+            <PerspectiveCamera makeDefault position={[8, 6, 10]} />
 
-          {/* Camera controls */}
-          <OrbitControls
-            enablePan={true}
-            enableZoom={true}
-            enableRotate={true}
-            minDistance={2}
-            maxDistance={50}
-          />
+            {/* Camera controls */}
+            <OrbitControls
+              enablePan={true}
+              enableZoom={true}
+              enableRotate={true}
+              minDistance={3}
+              maxDistance={80}
+              target={[0, 0, 0]}
+              enableDamping={true}
+              dampingFactor={0.05}
+            />
 
-          {/* Space environment */}
-          <SpaceEnvironment />
-        </Suspense>
+            {/* Space environment */}
+            <SpaceEnvironment />
+          </Suspense>
+        </SceneErrorBoundary>
       </Canvas>
     </div>
   );

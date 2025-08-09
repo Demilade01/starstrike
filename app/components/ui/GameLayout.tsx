@@ -128,24 +128,59 @@ export function GameLayout() {
             </div>
           </div>
 
-          {/* Welcome/Status Message */}
+                    {/* Welcome/Status Message */}
           <div className="absolute bottom-4 right-4 pointer-events-auto">
             <div className={`backdrop-blur-sm rounded-lg p-4 border ${
               connected
-                ? 'bg-green-600/80 border-green-500/50'
+                ? isInMission
+                  ? 'bg-orange-600/80 border-orange-500/50'
+                  : 'bg-green-600/80 border-green-500/50'
                 : 'bg-gradient-to-r from-blue-600/80 to-purple-600/80 border-blue-500/50'
             }`}>
               <h3 className="text-lg font-semibold mb-1">
-                {connected ? 'Ready for Missions!' : 'Welcome to StarStrike!'}
+                {!connected
+                  ? 'Welcome to StarStrike!'
+                  : isInMission
+                    ? 'Mining in Progress!'
+                    : 'Ready for Missions!'
+                }
               </h3>
               <p className="text-sm text-gray-200">
-                {connected
-                  ? 'Select a mission from the board to begin mining.'
-                  : 'Connect your wallet to begin your mining consortium journey.'
+                {!connected
+                  ? 'Connect your wallet to begin your mining consortium journey.'
+                  : isInMission
+                    ? 'Click on asteroids to mine them! Complete 5 to finish the mission.'
+                    : 'Select a mission from the board to begin mining.'
                 }
               </p>
             </div>
           </div>
+
+          {/* Mining Instructions - Only show during missions */}
+          {connected && isInMission && (
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-auto">
+              <div className="bg-black/90 backdrop-blur-sm rounded-lg p-6 border border-orange-500/50 text-center">
+                <h3 className="text-xl font-bold mb-2 text-orange-400">Mining Mode Active</h3>
+                <p className="text-sm text-gray-300 mb-3">
+                  Click on asteroids to mine them with your laser!
+                </p>
+                <div className="flex items-center justify-center gap-4 text-xs">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-gray-400 rounded"></div>
+                    <span>Basic Minerals</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-yellow-400 rounded"></div>
+                    <span>Rare Elements</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-green-400 rounded"></div>
+                    <span>Mineable</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>
