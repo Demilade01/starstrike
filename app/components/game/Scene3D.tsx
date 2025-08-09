@@ -37,16 +37,35 @@ function SpaceEnvironment() {
 
   return (
     <>
-      {/* Starfield background */}
-      <Stars
-        radius={100}
-        depth={50}
-        count={5000}
-        factor={4}
-        saturation={0}
-        fade
-        speed={1}
-      />
+                  {/* Enhanced starfield background */}
+            <Stars
+              radius={200}
+              depth={100}
+              count={8000}
+              factor={6}
+              saturation={0}
+              fade
+              speed={0.5}
+            />
+
+            {/* Distant nebula effect */}
+            <mesh position={[-50, 20, -80]}>
+              <sphereGeometry args={[30, 32, 32]} />
+              <meshBasicMaterial
+                color="#4338ca"
+                transparent
+                opacity={0.1}
+              />
+            </mesh>
+
+            <mesh position={[60, -30, -100]}>
+              <sphereGeometry args={[25, 32, 32]} />
+              <meshBasicMaterial
+                color="#dc2626"
+                transparent
+                opacity={0.08}
+              />
+            </mesh>
 
       {/* Ambient lighting */}
       <ambientLight intensity={0.2} />
@@ -97,7 +116,11 @@ interface Scene3DProps {
 export function Scene3D({ className = "" }: Scene3DProps) {
   return (
         <div className={`w-full h-full bg-black ${className}`}>
-      <Canvas>
+      <Canvas
+        camera={{ position: [8, 6, 10] }}
+        onPointerMissed={() => console.log('👻 Canvas pointer missed')}
+        style={{ cursor: 'pointer' }}
+      >
         <SceneErrorBoundary>
           <Suspense fallback={<LoadingScreen />}>
             {/* Camera setup */}

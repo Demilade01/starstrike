@@ -25,6 +25,23 @@ export function AsteroidField({ count = 20, radius = 15 }: AsteroidFieldProps) {
   const [miningProgress, setMiningProgress] = useState<{ [key: string]: number }>({});
   const [asteroids, setAsteroids] = useState<Asteroid[]>([]);
 
+  // Reset mining state when mission changes
+  useEffect(() => {
+    if (!isInMission) {
+      console.log('🔄 Resetting asteroid mining state - no active mission');
+      setMinedAsteroids(new Set());
+      setMiningProgress({});
+    }
+  }, [isInMission]);
+
+  // Debug game state
+  console.log('🎮 AsteroidField state:', {
+    isInMission,
+    activeMission: activeMission?.type,
+    asteroidCount: asteroids.length,
+    minedCount: minedAsteroids.size
+  });
+
   // Generate random asteroids only on client side
   useEffect(() => {
     const asteroidList: Asteroid[] = [];
@@ -57,7 +74,23 @@ export function AsteroidField({ count = 20, radius = 15 }: AsteroidFieldProps) {
   }, [count, radius]);
 
   const handleAsteroidClick = async (asteroid: Asteroid) => {
-    if (!isInMission || !activeMission || minedAsteroids.has(asteroid.id) || !asteroid.id) return;
+    console.log('🎯 Asteroid clicked!', {
+      asteroidId: asteroid.id,
+      isInMission,
+      hasActiveMission: !!activeMission,
+      alreadyMined: minedAsteroids.has(asteroid.id),
+      currentMined: minedAsteroids.size
+    });
+
+    if (!isInMission || !activeMission || minedAsteroids.has(asteroid.id) || !asteroid.id) {
+      console.log('❌ Click blocked:', {
+        isInMission,
+        hasActiveMission: !!activeMission,
+        asteroidId: asteroid.id,
+        alreadyMined: minedAsteroids.has(asteroid.id)
+      });
+      return;
+    }
 
     // Start mining animation
     setMiningProgress(prev => ({ ...prev, [asteroid.id]: 0 }));
@@ -72,13 +105,29 @@ export function AsteroidField({ count = 20, radius = 15 }: AsteroidFieldProps) {
           clearInterval(miningInterval);
 
           // Mark asteroid as mined
-          setMinedAsteroids(prev => new Set([...prev, asteroid.id]));
+          setMinedAsteroids(prevMined => new Set([...prevMined, asteroid.id]));
+
+          // Add completion effect (could trigger notification here)
+          console.log('💎 Asteroid mined!', {
+            resources: asteroid.resources,
+            size: asteroid.size,
+            id: asteroid.id
+          });
 
           // Check if mission is complete
           const totalMined = minedAsteroids.size + 1;
-          if (activeMission.type === 'mining_quota' && totalMined >= 5) {
+          console.log('⛏️ Mining completed!', {
+            asteroidId: asteroid.id,
+            totalMined,
+            missionType: activeMission?.type,
+            shouldComplete: totalMined >= 5
+          });
+
+          if ((activeMission.type === 'mining_quota' || activeMission.type === 'exploration') && totalMined >= 5) {
+            console.log('🎉 Mission should complete now!');
             // Complete the mission after mining 5 asteroids
             setTimeout(() => {
+              console.log('🎯 Calling completeMission...');
               completeMission(true);
               setMinedAsteroids(new Set()); // Reset for next mission
               setMiningProgress({});
@@ -106,7 +155,7 @@ export function AsteroidField({ count = 20, radius = 15 }: AsteroidFieldProps) {
           asteroid={asteroid}
           isMined={minedAsteroids.has(asteroid.id)}
           miningProgress={miningProgress[asteroid.id] || 0}
-          canMine={isInMission && activeMission?.type === 'mining_quota'}
+          canMine={isInMission && (activeMission?.type === 'mining_quota' || activeMission?.type === 'exploration')}
           onClick={() => handleAsteroidClick(asteroid)}
         />
       ))}
@@ -128,23 +177,29 @@ function AsteroidMesh({ asteroid, isMined, miningProgress, canMine, onClick }: A
 
   // Animate asteroid rotation
   useFrame(() => {
-    if (meshRef.current && asteroid.rotationSpeed) {
-      meshRef.current.rotation.x += asteroid.rotationSpeed[0];
-      meshRef.current.rotation.y += asteroid.rotationSpeed[1];
-      meshRef.current.rotation.z += asteroid.rotationSpeed[2];
+    if (meshRef.current && asteroid?.rotationSpeed && Array.isArray(asteroid.rotationSpeed)) {
+      try {
+        meshRef.current.rotation.x += asteroid.rotationSpeed[0] || 0;
+        meshRef.current.rotation.y += asteroid.rotationSpeed[1] || 0;
+        meshRef.current.rotation.z += asteroid.rotationSpeed[2] || 0;
+      } catch (error) {
+        console.error('Asteroid rotation error:', error);
+      }
     }
   });
 
   const getAsteroidColor = () => {
     if (isMined) return "#666666"; // Dark gray when mined
-    if (hovered && canMine) return "#4ade80"; // Green when hoverable
+    if (hovered && canMine) return "#4ade80"; // Green when hoverable and minable
+    if (hovered && !canMine) return "#ef4444"; // Red when hovered but not minable
     if (asteroid.resources === 'rare_elements') return "#fbbf24"; // Gold for rare
     return "#a3a3a3"; // Gray for basic
   };
 
   const getEmissiveColor = () => {
     if (miningProgress > 0) return "#ff4444"; // Red glow when mining
-    if (hovered && canMine) return "#22c55e"; // Green glow when hoverable
+    if (hovered && canMine) return "#22c55e"; // Green glow when hoverable and minable
+    if (hovered && !canMine) return "#ef4444"; // Red glow when not minable
     return "#000000";
   };
 
@@ -153,9 +208,28 @@ function AsteroidMesh({ asteroid, isMined, miningProgress, canMine, onClick }: A
       {/* Main Asteroid */}
       <mesh
         ref={meshRef}
-        onClick={canMine ? onClick : undefined}
-        onPointerOver={() => setHovered(true)}
-        onPointerOut={() => setHovered(false)}
+        onClick={(e) => {
+          e.stopPropagation();
+          console.log('🔥 Mesh clicked!', { canMine, asteroidId: asteroid.id });
+          if (canMine && onClick) {
+            onClick();
+          } else if (!canMine) {
+            // Visual feedback for non-minable clicks
+            console.log('❌ Cannot mine: No active mission or asteroid already mined');
+          }
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          console.log('👆 Hover start:', asteroid.id);
+          setHovered(true);
+          document.body.style.cursor = canMine ? 'pointer' : 'not-allowed';
+        }}
+        onPointerOut={(e) => {
+          e.stopPropagation();
+          console.log('👋 Hover end:', asteroid.id);
+          setHovered(false);
+          document.body.style.cursor = 'default';
+        }}
         scale={isMined ? 0.7 : 1}
       >
         {/* Irregular asteroid shape */}
@@ -195,26 +269,55 @@ function AsteroidMesh({ asteroid, isMined, miningProgress, canMine, onClick }: A
       {/* Mining Laser Effect */}
       {miningProgress > 0 && miningProgress < 100 && (
         <group>
+          {/* Main laser light */}
           <pointLight
             position={[0, 0, 0]}
             color="#ff4444"
-            intensity={2}
-            distance={5}
+            intensity={0.8 + Math.sin(Date.now() * 0.01) * 0.3}
+            distance={8}
           />
-          {/* Particle effect simulation with small spheres */}
-          {[...Array(5)].map((_, i) => (
+
+          {/* Pulsing core effect */}
+          <mesh>
+            <sphereGeometry args={[asteroid.size * 1.1, 16, 16]} />
+            <meshBasicMaterial
+              color="#ff2222"
+              transparent
+              opacity={0.3 + Math.sin(Date.now() * 0.005) * 0.2}
+            />
+          </mesh>
+
+          {/* Sparks/particles */}
+          {[...Array(12)].map((_, i) => (
             <mesh
               key={i}
               position={[
-                (Math.random() - 0.5) * asteroid.size * 2,
-                (Math.random() - 0.5) * asteroid.size * 2,
-                (Math.random() - 0.5) * asteroid.size * 2,
+                (Math.random() - 0.5) * asteroid.size * 3,
+                (Math.random() - 0.5) * asteroid.size * 3,
+                (Math.random() - 0.5) * asteroid.size * 3,
               ]}
             >
-              <sphereGeometry args={[0.02, 4, 4]} />
-              <meshStandardMaterial
-                color="#ff6666"
-                emissive="#ff4444"
+              <sphereGeometry args={[0.02 + Math.random() * 0.03, 4, 4]} />
+              <meshBasicMaterial
+                color={Math.random() > 0.5 ? "#ffaa00" : "#ff6600"}
+                transparent
+                opacity={0.8}
+              />
+            </mesh>
+          ))}
+
+          {/* Energy rings */}
+          {[0, 1, 2].map((ringIndex) => (
+            <mesh
+              key={`ring-${ringIndex}`}
+              rotation={[Math.PI / 2, 0, ringIndex * Math.PI / 3]}
+              scale={[1 + ringIndex * 0.3, 1 + ringIndex * 0.3, 1]}
+            >
+              <ringGeometry args={[asteroid.size * 1.5, asteroid.size * 1.7, 16]} />
+              <meshBasicMaterial
+                color="#ff8844"
+                transparent
+                opacity={0.4 - ringIndex * 0.1}
               />
             </mesh>
           ))}
