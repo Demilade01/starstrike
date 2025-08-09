@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useMemo } from 'react';
+import { useRef, useState, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Mesh, Vector3 } from 'three';
 import { useGame } from '../../hooks/useGame';
@@ -23,9 +23,10 @@ export function AsteroidField({ count = 20, radius = 15 }: AsteroidFieldProps) {
   const { isInMission, activeMission, completeMission } = useGame();
   const [minedAsteroids, setMinedAsteroids] = useState<Set<string>>(new Set());
   const [miningProgress, setMiningProgress] = useState<{ [key: string]: number }>({});
+  const [asteroids, setAsteroids] = useState<Asteroid[]>([]);
 
-  // Generate random asteroids
-  const asteroids = useMemo(() => {
+  // Generate random asteroids only on client side
+  useEffect(() => {
     const asteroidList: Asteroid[] = [];
 
     for (let i = 0; i < count; i++) {
@@ -52,7 +53,7 @@ export function AsteroidField({ count = 20, radius = 15 }: AsteroidFieldProps) {
       });
     }
 
-    return asteroidList;
+    setAsteroids(asteroidList);
   }, [count, radius]);
 
   const handleAsteroidClick = async (asteroid: Asteroid) => {
@@ -91,6 +92,11 @@ export function AsteroidField({ count = 20, radius = 15 }: AsteroidFieldProps) {
       });
     }, 100);
   };
+
+  // Don't render anything until asteroids are generated
+  if (asteroids.length === 0) {
+    return null;
+  }
 
   return (
     <group>
@@ -178,7 +184,7 @@ function AsteroidMesh({ asteroid, isMined, miningProgress, canMine, onClick }: A
       {asteroid.resources === 'rare_elements' && !isMined && (
         <mesh position={[0, asteroid.size + 0.3, 0]}>
           <sphereGeometry args={[0.1, 8, 6]} />
-          <meshBasicMaterial
+          <meshStandardMaterial
             color="#fbbf24"
             emissive="#fbbf24"
             emissiveIntensity={0.5}
@@ -206,7 +212,7 @@ function AsteroidMesh({ asteroid, isMined, miningProgress, canMine, onClick }: A
               ]}
             >
               <sphereGeometry args={[0.02, 4, 4]} />
-              <meshBasicMaterial
+              <meshStandardMaterial
                 color="#ff6666"
                 emissive="#ff4444"
               />
