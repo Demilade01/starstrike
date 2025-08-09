@@ -1,9 +1,34 @@
 'use client';
 
+import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletButton } from '../wallet/WalletButton';
 import { Scene3D } from '../game/Scene3D';
+import { MissionBoard } from '../game/MissionBoard';
+import { useGame } from '../../hooks/useGame';
 
 export function GameLayout() {
+  const { connected } = useWallet();
+  const {
+    isLoading,
+    player,
+    availableMissions,
+    activeMission,
+    isInMission,
+    startMission,
+    completeMission
+  } = useGame();
+
+  // Calculate next rank XP requirement
+  const getNextRankXP = (currentXP: number, rank: string) => {
+    switch (rank) {
+      case 'rookie': return 100;
+      case 'experienced': return 500;
+      case 'foreman': return 1500;
+      case 'sector_chief': return 5000;
+      default: return currentXP;
+    }
+  };
+
   return (
     <div className="w-full h-screen bg-black text-white flex flex-col">
       {/* Header */}
@@ -13,6 +38,9 @@ export function GameLayout() {
             StarStrike
           </h1>
           <span className="text-sm text-gray-400">Cosmic Mining Consortium</span>
+          {isLoading && (
+            <span className="text-xs text-yellow-400">Loading...</span>
+          )}
         </div>
 
         <div className="flex items-center gap-4">
@@ -30,34 +58,67 @@ export function GameLayout() {
 
         {/* Game UI Overlay */}
         <div className="absolute inset-0 pointer-events-none">
-          {/* HUD Elements */}
-          <div className="absolute top-4 left-4 pointer-events-auto">
-            <div className="bg-black/50 backdrop-blur-sm rounded-lg p-4 border border-gray-700">
-              <h3 className="text-lg font-semibold mb-2">Mission Status</h3>
-              <p className="text-gray-300 text-sm">No active missions</p>
+          {/* Mission Board - Left Side */}
+          {connected && player && (
+            <div className="absolute top-4 left-4 pointer-events-auto">
+              <MissionBoard
+                missions={availableMissions}
+                activeMission={activeMission}
+                isInMission={isInMission}
+                onStartMission={startMission}
+                onCompleteMission={completeMission}
+              />
             </div>
-          </div>
+          )}
 
           {/* Player Info */}
           <div className="absolute top-4 right-4 pointer-events-auto">
-            <div className="bg-black/50 backdrop-blur-sm rounded-lg p-4 border border-gray-700">
+            <div className="bg-black/80 backdrop-blur-sm rounded-lg p-4 border border-gray-700">
               <h3 className="text-lg font-semibold mb-2">Pilot Status</h3>
-              <div className="space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-300">Rank:</span>
-                  <span className="text-blue-400">Rookie Miner</span>
+              {connected && player ? (
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Rank:</span>
+                    <span className="text-blue-400 capitalize">{player.rank.replace('_', ' ')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">XP:</span>
+                    <span className="text-green-400">
+                      {player.totalXP} / {getNextRankXP(player.totalXP, player.rank)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Credits:</span>
+                    <span className="text-yellow-400">{player.credits.toLocaleString()}</span>
+                  </div>
+
+                  {/* Traits */}
+                  <div className="mt-3 pt-2 border-t border-gray-600">
+                    <h4 className="text-xs font-semibold text-gray-400 mb-1">Skills</h4>
+                    <div className="grid grid-cols-2 gap-1 text-xs">
+                      <div>Ship: {player.traits.shipHandling}</div>
+                      <div>Mining: {player.traits.miningEfficiency}</div>
+                      <div>Nav: {player.traits.navigation}</div>
+                      <div>Combat: {player.traits.combatSkills}</div>
+                      <div>Engineering: {player.traits.engineering}</div>
+                      <div>Leadership: {player.traits.leadership}</div>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-300">XP:</span>
-                  <span className="text-green-400">0 / 100</span>
+              ) : (
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Status:</span>
+                    <span className="text-red-400">Not Connected</span>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
           {/* Controls Help */}
           <div className="absolute bottom-4 left-4 pointer-events-auto">
-            <div className="bg-black/50 backdrop-blur-sm rounded-lg p-4 border border-gray-700">
+            <div className="bg-black/80 backdrop-blur-sm rounded-lg p-4 border border-gray-700">
               <h3 className="text-sm font-semibold mb-2">Controls</h3>
               <div className="space-y-1 text-xs text-gray-300">
                 <div>Left Click + Drag: Rotate camera</div>
@@ -67,12 +128,21 @@ export function GameLayout() {
             </div>
           </div>
 
-          {/* Welcome Message */}
+          {/* Welcome/Status Message */}
           <div className="absolute bottom-4 right-4 pointer-events-auto">
-            <div className="bg-gradient-to-r from-blue-600/80 to-purple-600/80 backdrop-blur-sm rounded-lg p-4 border border-blue-500/50">
-              <h3 className="text-lg font-semibold mb-1">Welcome to StarStrike!</h3>
+            <div className={`backdrop-blur-sm rounded-lg p-4 border ${
+              connected
+                ? 'bg-green-600/80 border-green-500/50'
+                : 'bg-gradient-to-r from-blue-600/80 to-purple-600/80 border-blue-500/50'
+            }`}>
+              <h3 className="text-lg font-semibold mb-1">
+                {connected ? 'Ready for Missions!' : 'Welcome to StarStrike!'}
+              </h3>
               <p className="text-sm text-gray-200">
-                Connect your wallet to begin your mining consortium journey.
+                {connected
+                  ? 'Select a mission from the board to begin mining.'
+                  : 'Connect your wallet to begin your mining consortium journey.'
+                }
               </p>
             </div>
           </div>
