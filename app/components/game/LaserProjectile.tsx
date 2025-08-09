@@ -58,22 +58,26 @@ export function LaserProjectile({
       {/* Main projectile */}
       <mesh ref={projectileRef}>
         <sphereGeometry args={[0.05]} />
-        <meshBasicMaterial
+        <meshStandardMaterial
           color="#00ffff"
           emissive="#0088cc"
           transparent
           opacity={0.9}
+          metalness={0}
+          roughness={0}
         />
       </mesh>
 
       {/* Energy trail */}
       <mesh ref={trailRef}>
         <cylinderGeometry args={[0.02, 0.04, 0.8]} />
-        <meshBasicMaterial
+        <meshStandardMaterial
           color="#00aaff"
           emissive="#0066aa"
           transparent
           opacity={0.6}
+          metalness={0}
+          roughness={0}
         />
       </mesh>
 
