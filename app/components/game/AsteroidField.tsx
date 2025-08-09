@@ -178,7 +178,7 @@ function AsteroidMesh({ asteroid, isMined, miningProgress, canMine, onClick }: A
       {asteroid.resources === 'rare_elements' && !isMined && (
         <mesh position={[0, asteroid.size + 0.3, 0]}>
           <sphereGeometry args={[0.1, 8, 6]} />
-          <meshBasicMaterial
+          <meshStandardMaterial
             color="#fbbf24"
             emissive="#fbbf24"
             emissiveIntensity={0.5}
@@ -206,7 +206,7 @@ function AsteroidMesh({ asteroid, isMined, miningProgress, canMine, onClick }: A
               ]}
             >
               <sphereGeometry args={[0.02, 4, 4]} />
-              <meshBasicMaterial
+              <meshStandardMaterial
                 color="#ff6666"
                 emissive="#ff4444"
               />
