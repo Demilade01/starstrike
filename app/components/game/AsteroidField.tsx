@@ -25,6 +25,15 @@ export function AsteroidField({ count = 20, radius = 15 }: AsteroidFieldProps) {
   const [miningProgress, setMiningProgress] = useState<{ [key: string]: number }>({});
   const [asteroids, setAsteroids] = useState<Asteroid[]>([]);
 
+  // Reset mining state when mission changes
+  useEffect(() => {
+    if (!isInMission) {
+      console.log('🔄 Resetting asteroid mining state - no active mission');
+      setMinedAsteroids(new Set());
+      setMiningProgress({});
+    }
+  }, [isInMission]);
+
   // Debug game state
   console.log('🎮 AsteroidField state:', {
     isInMission,
@@ -181,14 +190,16 @@ function AsteroidMesh({ asteroid, isMined, miningProgress, canMine, onClick }: A
 
   const getAsteroidColor = () => {
     if (isMined) return "#666666"; // Dark gray when mined
-    if (hovered && canMine) return "#4ade80"; // Green when hoverable
+    if (hovered && canMine) return "#4ade80"; // Green when hoverable and minable
+    if (hovered && !canMine) return "#ef4444"; // Red when hovered but not minable
     if (asteroid.resources === 'rare_elements') return "#fbbf24"; // Gold for rare
     return "#a3a3a3"; // Gray for basic
   };
 
   const getEmissiveColor = () => {
     if (miningProgress > 0) return "#ff4444"; // Red glow when mining
-    if (hovered && canMine) return "#22c55e"; // Green glow when hoverable
+    if (hovered && canMine) return "#22c55e"; // Green glow when hoverable and minable
+    if (hovered && !canMine) return "#ef4444"; // Red glow when not minable
     return "#000000";
   };
 
@@ -202,15 +213,22 @@ function AsteroidMesh({ asteroid, isMined, miningProgress, canMine, onClick }: A
           console.log('🔥 Mesh clicked!', { canMine, asteroidId: asteroid.id });
           if (canMine && onClick) {
             onClick();
+          } else if (!canMine) {
+            // Visual feedback for non-minable clicks
+            console.log('❌ Cannot mine: No active mission or asteroid already mined');
           }
         }}
-        onPointerOver={() => {
+        onPointerOver={(e) => {
+          e.stopPropagation();
           console.log('👆 Hover start:', asteroid.id);
           setHovered(true);
+          document.body.style.cursor = canMine ? 'pointer' : 'not-allowed';
         }}
-        onPointerOut={() => {
+        onPointerOut={(e) => {
+          e.stopPropagation();
           console.log('👋 Hover end:', asteroid.id);
           setHovered(false);
+          document.body.style.cursor = 'default';
         }}
         scale={isMined ? 0.7 : 1}
       >

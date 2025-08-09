@@ -25,6 +25,18 @@ export function useGame() {
     isInMission: false,
   });
 
+  // Reset function to clear all state
+  const resetGameState = useCallback(() => {
+    console.log('🔄 Resetting game state...');
+    setGameState({
+      isLoading: false,
+      player: null,
+      availableMissions: [],
+      activeMission: null,
+      isInMission: false,
+    });
+  }, []);
+
   const honeycombClient = useMemo(() => getHoneycombClient(), []);
   const missionManager = useMemo(() => new MissionManager(honeycombClient), [honeycombClient]);
 
@@ -40,7 +52,8 @@ export function useGame() {
   // Initialize player data when wallet connects
   const initializePlayer = useCallback(async () => {
     if (!publicKey || !connected) {
-      setGameState(prev => ({ ...prev, player: null }));
+      console.log('❌ No wallet connected, resetting state');
+      resetGameState();
       return;
     }
 
@@ -207,5 +220,6 @@ export function useGame() {
     completeMission,
     refreshMissions,
     initializePlayer,
+    resetGameState,
   };
 }

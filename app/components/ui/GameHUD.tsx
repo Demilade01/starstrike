@@ -71,7 +71,7 @@ export function GameHUD({ className = "" }: GameHUDProps) {
   return (
     <div className={`fixed inset-0 pointer-events-none ${className} z-40`}>
       {/* Top HUD - XP and Credits - Positioned below header */}
-      <div className="absolute top-20 left-4 right-4 pointer-events-auto">
+      <div className="absolute top-24 left-4 right-4 pointer-events-auto">
         <div className="bg-black/90 backdrop-blur-sm rounded-lg p-4 border border-gray-600/50">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-4">
@@ -135,7 +135,7 @@ export function GameHUD({ className = "" }: GameHUDProps) {
 
       {/* Mission Objective Tracker */}
       {isInMission && activeMission && (
-        <div className="absolute top-20 right-4 pointer-events-auto">
+        <div className="absolute top-24 right-4 pointer-events-auto">
           <div className="bg-black/90 backdrop-blur-sm rounded-lg p-4 border border-orange-500/50 min-w-64">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
@@ -201,19 +201,49 @@ export function GameHUD({ className = "" }: GameHUDProps) {
       {/* Controls Help */}
       <div className="absolute bottom-4 left-4 pointer-events-auto">
         <div className="bg-black/90 backdrop-blur-sm rounded-lg p-3 border border-gray-600/50">
-          <h4 className="text-white font-semibold text-sm mb-2">Controls</h4>
+          <h4 className="text-white font-semibold text-sm mb-2">Ship Controls</h4>
           <div className="space-y-1 text-xs text-gray-400">
             <div className="flex items-center gap-2">
-              <kbd className="bg-gray-800 px-2 py-1 rounded text-xs">LMB</kbd>
-              <span>Click asteroids to mine</span>
+              <kbd className="bg-blue-800 px-2 py-1 rounded text-xs">W/↑</kbd>
+              <span>Forward thrust</span>
             </div>
             <div className="flex items-center gap-2">
-              <kbd className="bg-gray-800 px-2 py-1 rounded text-xs">RMB</kbd>
-              <span>Pan camera</span>
+              <kbd className="bg-blue-800 px-2 py-1 rounded text-xs">S/↓</kbd>
+              <span>Reverse thrust</span>
             </div>
             <div className="flex items-center gap-2">
-              <kbd className="bg-gray-800 px-2 py-1 rounded text-xs">Scroll</kbd>
-              <span>Zoom in/out</span>
+              <kbd className="bg-blue-800 px-2 py-1 rounded text-xs">A/←</kbd>
+              <span>Strafe left</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <kbd className="bg-blue-800 px-2 py-1 rounded text-xs">D/→</kbd>
+              <span>Strafe right</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <kbd className="bg-orange-800 px-2 py-1 rounded text-xs">Q</kbd>
+              <span>Rotate left</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <kbd className="bg-orange-800 px-2 py-1 rounded text-xs">E</kbd>
+              <span>Rotate right</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <kbd className="bg-red-800 px-2 py-1 rounded text-xs">Space</kbd>
+              <span>Fire weapons</span>
+            </div>
+            <div className="border-t border-gray-600 pt-2 mt-2">
+              <div className="flex items-center gap-2">
+                <kbd className="bg-gray-800 px-2 py-1 rounded text-xs">LMB</kbd>
+                <span>Click asteroids to mine</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <kbd className="bg-gray-800 px-2 py-1 rounded text-xs">RMB</kbd>
+                <span>Pan camera</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <kbd className="bg-gray-800 px-2 py-1 rounded text-xs">Scroll</kbd>
+                <span>Zoom in/out</span>
+              </div>
             </div>
           </div>
         </div>
