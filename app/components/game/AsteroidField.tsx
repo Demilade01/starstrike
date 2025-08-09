@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useMemo } from 'react';
+import { useRef, useState, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Mesh, Vector3 } from 'three';
 import { useGame } from '../../hooks/useGame';
@@ -23,9 +23,10 @@ export function AsteroidField({ count = 20, radius = 15 }: AsteroidFieldProps) {
   const { isInMission, activeMission, completeMission } = useGame();
   const [minedAsteroids, setMinedAsteroids] = useState<Set<string>>(new Set());
   const [miningProgress, setMiningProgress] = useState<{ [key: string]: number }>({});
+  const [asteroids, setAsteroids] = useState<Asteroid[]>([]);
 
-  // Generate random asteroids
-  const asteroids = useMemo(() => {
+  // Generate random asteroids only on client side
+  useEffect(() => {
     const asteroidList: Asteroid[] = [];
 
     for (let i = 0; i < count; i++) {
@@ -52,7 +53,7 @@ export function AsteroidField({ count = 20, radius = 15 }: AsteroidFieldProps) {
       });
     }
 
-    return asteroidList;
+    setAsteroids(asteroidList);
   }, [count, radius]);
 
   const handleAsteroidClick = async (asteroid: Asteroid) => {
@@ -91,6 +92,11 @@ export function AsteroidField({ count = 20, radius = 15 }: AsteroidFieldProps) {
       });
     }, 100);
   };
+
+  // Don't render anything until asteroids are generated
+  if (asteroids.length === 0) {
+    return null;
+  }
 
   return (
     <group>
